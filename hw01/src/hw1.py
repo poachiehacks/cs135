@@ -70,50 +70,25 @@ def split_into_train_and_test(x_all_LF, frac_test=0.5, random_state=None):
     For more about RandomState, see:
     https://stackoverflow.com/questions/28064634/random-state-pseudo-random-numberin-scikit-learn
     '''
+    # using RandomState instead of the newer Generator since hw docs refer to it
     if random_state is None:
         print('using numpy\' default random state')
         random_state = np.random
     elif isinstance(random_state, int):
         print(f"using provided seed {random_state} to initialize a RandomState")
         random_state = np.random.RandomState(seed=random_state)
-    ## TODO fixme
-
-    # using RandomState instead of the newer Generator since hw docs refer to it
     
     # get number of training data and number of predictors
     n_total_examples, n_features = x_all_LF.shape
-    print(x_all_LF.shape)
 
     n_test_examples  = int(np.ceil(n_total_examples * frac_test))
     n_train_examples = n_total_examples - n_test_examples
-
-    print(n_test_examples)
-    print(n_train_examples)
-
 
     # using np.random.permutation to shuffle the provided dataset
     permuted_x = random_state.permutation(x_all_LF)
     x_test_NF = permuted_x[:n_test_examples]
     x_train_MF = permuted_x[n_test_examples:]
-    
-    print('original data')
-    print(x_all_LF)
-    print('')
 
-    print('permuted data')
-    print(permuted_x)
-    print('')
-
-    print('test set')
-    print(x_test_NF)
-    print('')
-
-    print('train set')
-    print(x_train_MF)
-    print('')
-
-
-    # x_train_MF
     return x_train_MF, x_test_NF
 
 
