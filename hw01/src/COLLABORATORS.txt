@@ -1,12 +1,6 @@
-(This is an example. Please edit accordingly.)
-
-Name: A. Student
-I spent 8 hours on this problem (1 on Prob. 1 and 3 on Prob. 2)
-I sought help from Prof. Huckleberry.
-We talked about the definition of Euclidean distance.
-
 Name: Kenny Yau
-I started working on this at 02-June-2025 1:14pm, took a break at 2:05pm
-Worked on it again from 4:30pm to 5:30pm
-I consulted NumPy docs to understand how the submodules `np.random` work
-I used Google to remember which numpy function is used for rounding up
+I worked on this assignment for 2.5-3 hours
+I consulted NumPy docs to understand how various submodules such as `np.random` work
+I also consulted those docs to find relevant functions for implementing the homework,
+namely `np.random.permutation` for shuffling the rows in a dataset 
+and `np.ceil` for rounding a number up to the nearest integer
