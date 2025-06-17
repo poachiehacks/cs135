@@ -1,0 +1,30 @@
+Name: Kenny Yau
+
+Time to complete:
+07-jun-2025
+- 8pm - 10:15pm
+- 10:45pm - 11:30pm
+3 hours
+
+08-jun-2025
+- 12pm - 12:30pm
+- 12:45 - 1:15pm
+- 4:00pm - 6:30pm
+3.5 hours
+
+Total time: 6.5 hours
+
+Resources consulted:
+- google to find out which python library + function can do polynomial linear regression
+- geeks for geeks to understand what PF.fit() does
+- poured over Polynomial Features page of sklearn to understand what fit() and transform() do
+- had issues combining training folds due to unfamiliarity with how np.vstack handles 1D arrays
+
+
+
+Humans consulted:
+- none
+
+Parts of the assignment that caused me to seek help:
+- reconciling the difference between model.predict() and transformed @ model.coef_ + model.intercept_
+- array shapes: making sure they were what different functions expected
