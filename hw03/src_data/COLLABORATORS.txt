@@ -1,0 +1,21 @@
+Name: Kenny Yau
+
+Time to complete:
+
+16-jun-2025
+1:00am - 3:15am
+11:00am - 1:00pm
+1:45pm - 5:15pm
+total: 6.75 hours
+
+
+Resources consulted:
+- lots of numpy, sklearn
+
+Humans consulted:
+- just discussions between classmates and lecturer during zoom lectures
+
+Parts of the assignment that caused me to seek help:
+- understanding the difference between tpr and ppv, tnr and npv
+- understanding how to use sklearn classes
+- understanding how to graph 3D plots
