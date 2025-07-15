@@ -1,0 +1,12 @@
+Kenny Yau
+CS135 Summer 2025
+HW 04 - MLPs and Neural Networks
+
+time spent: 
+8 hours
+
+folks consulted:
+- no one directly, but used all the piazza questions
+
+resources used:
+- scikit-learn website for classifier class docs
