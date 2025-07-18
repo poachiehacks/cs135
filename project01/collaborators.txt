@@ -1,0 +1,13 @@
+Kenny Yau
+CS135 Summer 2025
+
+
+Time spent on project:
+- likely around 11 hours
+
+
+People consulted:
+- just piazza posts
+
+Resources used:
+- sklearn, scipy docs
