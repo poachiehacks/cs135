@@ -110,8 +110,9 @@ def keep_words_with_certain_count(word_counts, min_count, max_count):
     return pruned_word_counts
 
 
-def train_svm_model(X, y):
-    svc = SVC(kernel='rbf', C=1.0, gamma='scale')   # default values
+def train_svm_model(X, y, C=1.0, degree=3):
+    # print(C, degree)
+    svc = SVC(C=C, degree=degree)   # default values
     svc.fit(X, y)
     return svc
 
@@ -125,17 +126,27 @@ def train_neural_network(X, y, hidden_layer_sizes):
     # will need to test max_iters like before
     # might be worth testing out initial learning rate
     # might be worth testing out hidden layer sizes (both # layers and # neurons)
-    mlp = MLPClassifier()
+    # print(hidden_layer_sizes)
+    mlp = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes)
     mlp.fit(X, y)
     return mlp
 
 
-def cross_validate(x_train, y_train, skf, train_model):
+def test_func(**parameters):
+    print(parameters)
+    test_func2(**parameters)
+
+def test_func2(x=None, y=None, z=None):
+    print(x, y, z)
+
+
+def cross_validate(x_train, y_train, skf, train_model, **model_params):
     """
         train_model is a function handle which takes in training data and 
         returns a sklearn-type model. important is that this model
         should have predict() and score() methods
     """
+    print(model_params)
 
     # perform validation by using cross-validation
     # make sure the data is formatted in such a way that public cross-validation functions can easily use
@@ -149,10 +160,8 @@ def cross_validate(x_train, y_train, skf, train_model):
         fold_y_train, fold_y_valid = y_train[train_idx], y_train[valid_idx]
     
         ### figure out the general loop for the training, prediction, metric measurement
-        
-
-        model = train_model(fold_x_train, fold_y_train)
-        preds = model.predict(fold_x_valid)
+        model = train_model(fold_x_train, fold_y_train, **model_params)
+        # preds = model.predict(fold_x_valid)
         accuracy = model.score(fold_x_train, fold_y_train)
         train_errors.append(1 - accuracy)
         accuracy = model.score(fold_x_valid, fold_y_valid)
@@ -167,6 +176,9 @@ def cross_validate(x_train, y_train, skf, train_model):
 
 
 if __name__ == "__main__":
+    # test_func(x=1, y=2, z='hello')
+    # exit()
+
     x_train_df, y_train_df = load_training_data()
 
     # it's simplest to preprocess data before doing split into folds
@@ -177,5 +189,24 @@ if __name__ == "__main__":
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
 
 
+    # TODO: how to unpack hyperparameters into a function without overriding defaults of parameters i don't specify?
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
-    svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model)
+    
+    # ### SVM
+    # svm_Cs = np.logspace(-1, 1, 5)    
+    # for C in svm_Cs:
+    #     svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
+
+    ### Deep Neural Network
+    # mlp_num_hlayers = [10, 30, 50, 70, 90]
+    # mlp_hlayer_neurons = [1100, 1300, 1500, 1700, 1900]
+    mlp_num_hlayers = [5, 7, 9]
+    mlp_hlayer_neurons = [100, 200, 300]
+    for num_hlayers in mlp_num_hlayers:
+        for num_neurons in mlp_hlayer_neurons:
+            hidden_layer_sizes = np.full((num_hlayers, ), num_neurons)
+            print(num_hlayers, num_neurons)
+            mlp_train_error, mlp_valid_error = cross_validate(
+                    x_train, y_train, skf, train_neural_network, hidden_layer_sizes=hidden_layer_sizes
+            )
+
