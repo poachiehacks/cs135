@@ -5,6 +5,11 @@ import re
 import unicodedata
 
 from sklearn.model_selection import StratifiedKFold
+# from sklearn.feature_extraction
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
+from sklearn.neural_network import MLPClassifier
 
 
 def load_training_data():
@@ -44,7 +49,7 @@ def preprocess(x_df):
     return x_new_df 
 
 
-def create_features(x_df):
+def create_features(x_df, min_count, max_count):
     """
         Creates a Bag of Words feature matrix from a dataframe of strings
 
@@ -64,9 +69,6 @@ def create_features(x_df):
     word_counts = {
         word:0 for word in unique_words_list
     }
-    # word_index = {
-    #     word:idx for idx, word in enumerate(unique_words_list)
-    # }
     
     # 3) count word frequency
     num_words_in_doc = 0
@@ -77,8 +79,6 @@ def create_features(x_df):
             num_words_in_doc += 1
 
     # 4) drop rare words, drop frequent words
-    min_count = 15
-    max_count = 15
     word_counts = keep_words_with_certain_count(word_counts, min_count, max_count)
     kept_words_list = sorted(list(word_counts.keys()))
     word_index = {
@@ -110,20 +110,72 @@ def keep_words_with_certain_count(word_counts, min_count, max_count):
     return pruned_word_counts
 
 
+def train_svm_model(X, y):
+    svc = SVC(kernel='rbf', C=1.0, gamma='scale')   # default values
+    svc.fit(X, y)
+    return svc
+
+
+def train_neural_network(X, y, hidden_layer_sizes):
+    # we'll use MLPClassifier for a simple fully-connected feed forward network
+    # default settings on the MLPClassifier look good, such as
+    # - adam optimizer
+    # - batch gradient descent
+    # - ReLU activation
+    # will need to test max_iters like before
+    # might be worth testing out initial learning rate
+    # might be worth testing out hidden layer sizes (both # layers and # neurons)
+    mlp = MLPClassifier()
+    mlp.fit(X, y)
+    return mlp
+
+
+def cross_validate(x_train, y_train, skf, train_model):
+    """
+        train_model is a function handle which takes in training data and 
+        returns a sklearn-type model. important is that this model
+        should have predict() and score() methods
+    """
+
+    # perform validation by using cross-validation
+    # make sure the data is formatted in such a way that public cross-validation functions can easily use
+    # TODO: check if the kfold split should be done only once so that
+    #       the splits are the same for all models
+    train_errors = []
+    valid_errors = []
+    # skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
+    for train_idx, valid_idx in skf.split(x_train, y_train):
+        fold_x_train, fold_x_valid = x_train[train_idx], x_train[valid_idx]
+        fold_y_train, fold_y_valid = y_train[train_idx], y_train[valid_idx]
+    
+        ### figure out the general loop for the training, prediction, metric measurement
+        
+
+        model = train_model(fold_x_train, fold_y_train)
+        preds = model.predict(fold_x_valid)
+        accuracy = model.score(fold_x_train, fold_y_train)
+        train_errors.append(1 - accuracy)
+        accuracy = model.score(fold_x_valid, fold_y_valid)
+        valid_errors.append(1 - accuracy)
+
+    avg_train_error = train_errors
+    avg_valid_error = valid_errors
+    print(f'avg training error:   {np.mean(train_errors)}')
+    print(f'avg validation error: {np.mean(valid_errors)}')
+
+    return avg_train_error, avg_valid_error
+
 
 if __name__ == "__main__":
     x_train_df, y_train_df = load_training_data()
 
     # it's simplest to preprocess data before doing split into folds
+    min_word_count = 2
+    max_word_count = 10
     x_train_processed = preprocess(x_train_df)
-    x_train = create_features(x_train_processed)
+    x_train = create_features(x_train_processed, min_word_count, max_word_count)
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
-    
-    
-    # perform validation by using cross-validation
-    # make sure the data is formatted in such a way that public cross-validation functions can easily use
+
+
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
-    for train_idx, valid_idx in skf.split(x_train_df, y_train_df):
-        fold_x_train, fold_x_valid = x_train[train_idx], x_train[valid_idx]
-        fold_y_train, fold_y_valid = y_train[train_idx], y_train[valid_idx]
-    
+    svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model)
