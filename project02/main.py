@@ -142,12 +142,13 @@ def train_random_forest(X, y):
     return clf
 
 
-def cross_validate(x_train, y_train, skf, train_model, **model_params):
+def cross_validate(x_train, y_train, skf, model_type, train_model, **model_params):
     """
         train_model is a function handle which takes in training data and 
         returns a sklearn-type model. important is that this model
         should have predict() and score() methods
     """
+    print(f'------cross-validating model type {model_type}------')
     print(model_params)
 
     # perform validation by using cross-validation
@@ -173,6 +174,7 @@ def cross_validate(x_train, y_train, skf, train_model, **model_params):
     avg_valid_error = np.mean(valid_errors)
     print(f'avg training error:   {np.mean(train_errors)}')
     print(f'avg validation error: {np.mean(valid_errors)}')
+    print('')
 
     return avg_train_error, avg_valid_error
 
@@ -237,8 +239,9 @@ if __name__ == "__main__":
     ]
 
     # RF
+    ccp_alphas = np.linspace(0, 0.05, 5)# regularization, bigger value is higher reg
 
-
+    #################################
 
     x_train_df, y_train_df = load_training_data()
 
@@ -254,7 +257,6 @@ if __name__ == "__main__":
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
 
 
-    # TODO: how to unpack hyperparameters into a function without overriding defaults of parameters i don't specify?
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
     all_train_errors = {}
@@ -273,35 +275,44 @@ if __name__ == "__main__":
             # and explore C, as it relates to regularization (high C = low reg, low C = high reg)
             for C in svm_Cs:
                 hyperparam_set = (C)
-                svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
+                svm_train_error, svm_valid_error = cross_validate(
+                        x_train, y_train, skf, model_type, train_svm_model, C=C
+                )
                 train_errors.append(svm_train_error)
                 valid_errors.append(svm_valid_error)
                 hyperparam_sets.append(hyperparam_set)
         elif model_type == 'mlp':
             ### Deep Neural Network
-            mlp_train_errors = []
-            mlp_valid_errors = []
-            mlp_hyperparam_sets = []
+            # mlp_train_errors = []
+            # mlp_valid_errors = []
+            # mlp_hyperparam_sets = []
             
             for hidden_layer_sizes in hls_list:
                 for alpha in alphas:
                     hyperparam_set = (hidden_layer_sizes, alpha)
                     
                     mlp_train_error, mlp_valid_error = cross_validate(
-                            x_train, y_train, skf, train_neural_network, 
+                            x_train, y_train, skf, model_type, train_neural_network, 
                             hidden_layer_sizes=hidden_layer_sizes, alpha=alpha
                     )
-                    mlp_train_errors.append(mlp_train_error)
-                    mlp_valid_errors.append(mlp_valid_error)
-                    mlp_hyperparam_sets.append(hyperparam_set)
+                    # mlp_train_errors.append(mlp_train_error)
+                    # mlp_valid_errors.append(mlp_valid_error)
+                    # mlp_hyperparam_sets.append(hyperparam_set)
                     train_errors.append(mlp_train_error)
                     valid_errors.append(mlp_valid_error)
                     hyperparam_sets.append(hyperparam_set)
 
-            draw_plots(mlp_train_errors, mlp_valid_errors, mlp_hyperparam_sets, filename='mlp_errors', folder='plots/mlp')
+            # draw_plots(mlp_train_errors, mlp_valid_errors, mlp_hyperparam_sets, filename='mlp_errors', folder='plots/mlp')
         elif model_type == 'rf':
             ### Random Forests
-            rf_train_error, rf_valid_error = cross_validate(x_train, y_train, skf, train_random_forest)
+            for ccp in ccp_alphas:
+                hyperparam_set = (ccp, )
+                rf_train_error, rf_valid_error = cross_validate(
+                        x_train, y_train, skf, model_type, train_random_forest, ccp_alpha=ccp
+                )
+                train_errors.append(svm_train_error)
+                valid_errors.append(svm_valid_error)
+                hyperparam_sets.append(hyperparam_set)
         else:
             print('invalid model type specified!')
 
