@@ -147,8 +147,8 @@ def train_neural_network(X, y, hidden_layer_sizes, alpha=0.0001):
     mlp.fit(X, y)
     return mlp
 
-def train_random_forest(X, y, ccp_alpha=0.0):
-    clf = RandomForestClassifier(ccp_alpha=ccp_alpha)
+def train_random_forest(X, y, ccp_alpha=0.0, min_samples_leaf=1):
+    clf = RandomForestClassifier(ccp_alpha=ccp_alpha, min_samples_leaf=min_samples_leaf)
     clf.fit(X, y)
     return clf
 
@@ -245,8 +245,8 @@ if __name__ == "__main__":
     svm_gammas = np.logspace(-1, 1, 5)
 
     # MLP
-    # alphas = np.logspace(-2, 1, 5)     # regularization, bigger value is higher reg
-    alphas = [10]     # regularization, bigger value is higher reg
+    alphas = np.logspace(-2, 1, 5)     # regularization, bigger value is higher reg
+    # alphas = [1]     # regularization, bigger value is higher reg
     hls_list = [                         # hidden layer sizes
         [500, 500, 500, 500, 500]
     ]
@@ -271,12 +271,7 @@ if __name__ == "__main__":
     # x_train = create_features(x_train_processed, min_word_count, max_word_count)
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
     x_train = create_features2(x_train_processed, min_word_count, max_word_count)
-    # print(type(x_train))
-    # print(x_train.shape)
-    # print(type(x_train2))
-    # print(x_train2.shape)
-    # x_train = x_train2
-
+    
     
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
@@ -329,7 +324,7 @@ if __name__ == "__main__":
             ### Random Forests
             for ccp in ccp_alphas:
                 for min_samples in min_samples_leaf:
-                    hyperparam_set = (ccp, )
+                    hyperparam_set = (ccp, min_samples)
                     rf_train_error, rf_valid_error = cross_validate(
                             x_train, y_train, skf, model_type, train_random_forest, ccp_alpha=ccp, min_samples_leaf=min_samples
                     )
