@@ -15,6 +15,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 
 def load_training_data():
@@ -52,6 +53,16 @@ def preprocess(x_df):
     x_new_df['text'] = tr_text_list
     
     return x_new_df 
+
+def create_features2(x_df, min_count, max_count):
+    """
+        Uses sklearn textual data feature extraction tools to get features
+    """
+    vectorizer = TfidfVectorizer()
+    feature_matrix = vectorizer.fit_transform(x_df['text'])
+    print(vectorizer.get_feature_names_out())
+    print(len(vectorizer.get_feature_names_out()))
+    return feature_matrix
 
 
 def create_features(x_df, min_count, max_count):
@@ -256,7 +267,14 @@ if __name__ == "__main__":
     x_train = create_features(x_train_processed, min_word_count, max_word_count)
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
 
+    x_train2 = create_features2(x_train_processed, min_word_count, max_word_count)
+    # print(type(x_train))
+    # print(x_train.shape)
+    # print(type(x_train2))
+    # print(x_train2.shape)
+    x_train = x_train2
 
+    
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
     all_train_errors = {}
