@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import pandas as pd
 import pathlib
@@ -201,12 +203,53 @@ def draw_plots(train_errors, valid_errors, hyperparams, filename='graph', folder
 
 if __name__ == "__main__":
     
+    parser = argparse.ArgumentParser(description="Choose an ML model.")
+    parser.add_argument(
+        "model",
+        type=str,
+        nargs="?",
+        choices=["svm", "mlp", "rf", "all"],
+        default="all", 
+        help="The ML model to use: svm, mlp, rf, or all three"
+    )
+    args = parser.parse_args()
+
+    if args.model == 'all':
+        models_to_run = ["svm", "mlp", "rf"]
+    else:
+        models_to_run = [args.model]
+
+
+    ###### hyper parameters ########
+    # Bag-of-Words
+    min_word_count = 2
+    max_word_count = 10
+
+
+    # SVM
+    svm_Cs = np.logspace(-1, 1, 5)      # regularization, bigger value is lower reg
+
+
+    # MLP
+    alphas = np.logspace(-4, -1, 3)     # regularization, bigger value is higher reg
+    hls_list = [                         # hidden layer sizes
+        [100, 100, 100]
+    ]
+
+    # RF
+
+
+
     x_train_df, y_train_df = load_training_data()
 
     # it's simplest to preprocess data before doing split into folds
-    min_word_count = 2
-    max_word_count = 10
     x_train_processed = preprocess(x_train_df)
+
+    # i should experiment with a smaller vocabulary vector and see if accuracy improves
+    # that should be solid reason to use fewer words
+    #
+    # i also wonder if it's important to keep rare words instead of throwing them out
+    # what's the histogram of word frequencies like?
     x_train = create_features(x_train_processed, min_word_count, max_word_count)
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
 
@@ -214,50 +257,49 @@ if __name__ == "__main__":
     # TODO: how to unpack hyperparameters into a function without overriding defaults of parameters i don't specify?
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
-    # ### SVM
-    # # explore gamma, as it relates to the rbf kernel (low gamma = smoother decision boundary, high gamma = more complex decision boundary)
-    # # and explore C, as it relates to regularization (high C = low reg, low C = high reg)
-    # svm_Cs = np.logspace(-1, 1, 5)    
-    # for C in svm_Cs:
-    #     svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
+    for model_type in models_to_run:
 
-    ### Deep Neural Network
-    # # consider exploring regularization
-    # mlp_num_hlayers = [10, 30, 50, 70, 90]
-    # mlp_hlayer_neurons = [1100, 1300, 1500, 1700, 1900]
-    # mlp_num_hlayers = [2, 3, 4]
-    # mlp_hlayer_neurons = [50, 70, 90]
-    mlp_num_hlayers = [20]
-    mlp_hlayer_neurons = [100]
-    alphas = np.logspace(-4, -1, 5)
-    hls_list = [
-        # [100, 100, 100],]
-    #     [1500, 900, 300],
-        [1500, 900, 100, 100, 100]
-    ]
+        all_train_errors = {}
+        all_valid_errors = {}
+        all_hyperparam_sets = {}
+        train_errors = []
+        valid_errors = []
+        hyperparam_sets = []
 
-    mlp_train_errors = []
-    mlp_valid_errors = []
-    mlp_hyperparams = []
-    # for num_hlayers in mlp_num_hlayers:
-    #     for num_neurons in mlp_hlayer_neurons:
-    #         for alpha in alphas:
-    #             hidden_layer_sizes = np.full((num_hlayers, ), num_neurons)
-                
-    #             hyperparams = (num_hlayers, num_neurons, alpha)
-    for hidden_layer_sizes in hls_list:
-        for alpha in alphas:
-            hyperparams = (hidden_layer_sizes, alpha)
+        if model_type == "svm":
+            ### SVM
+            # explore gamma, as it relates to the rbf kernel (low gamma = smoother decision boundary, high gamma = more complex decision boundary)
+            # and explore C, as it relates to regularization (high C = low reg, low C = high reg)
+            for C in svm_Cs:
+                svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
+        elif model_type == 'mlp':
+            ### Deep Neural Network
+            mlp_train_errors = []
+            mlp_valid_errors = []
+            mlp_hyperparam_sets = []
             
-            mlp_train_error, mlp_valid_error = cross_validate(
-                    x_train, y_train, skf, train_neural_network, 
-                    hidden_layer_sizes=hidden_layer_sizes, alpha=alpha
-            )
-            mlp_train_errors.append(mlp_train_error)
-            mlp_valid_errors.append(mlp_valid_error)
-            mlp_hyperparams.append(hyperparams)
+            for hidden_layer_sizes in hls_list:
+                for alpha in alphas:
+                    hyperparam_set = (hidden_layer_sizes, alpha)
+                    
+                    mlp_train_error, mlp_valid_error = cross_validate(
+                            x_train, y_train, skf, train_neural_network, 
+                            hidden_layer_sizes=hidden_layer_sizes, alpha=alpha
+                    )
+                    mlp_train_errors.append(mlp_train_error)
+                    mlp_valid_errors.append(mlp_valid_error)
+                    mlp_hyperparam_sets.append(hyperparam_set)
+                    train_errors.append(mlp_train_error)
+                    valid_errors.append(mlp_valid_error)
+                    hyperparam_sets.append(hyperparam_set)
 
-    draw_plots(mlp_train_errors, mlp_valid_errors, mlp_hyperparams, filename='mlp_errors', folder='plots/mlp')
+            draw_plots(mlp_train_errors, mlp_valid_errors, mlp_hyperparam_sets, filename='mlp_errors', folder='plots/mlp')
+        elif model_type == 'rf':
+            ### Random Forests
+            rf_train_error, rf_valid_error = cross_validate(x_train, y_train, skf, train_random_forest)
+        else:
+            print('invalid model type specified!')
 
-    # ### Random Forests
-    # rf_train_error, rf_valid_error = cross_validate(x_train, y_train, skf, train_random_forest)
+        all_train_errors[model_type] = train_errors
+        all_valid_errors[model_type] = valid_errors
+        all_hyperparam_sets[model_type] = hyperparam_sets
