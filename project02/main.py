@@ -328,8 +328,8 @@ if __name__ == "__main__":
                 rf_train_error, rf_valid_error = cross_validate(
                         x_train, y_train, skf, model_type, train_random_forest, ccp_alpha=ccp
                 )
-                train_errors.append(svm_train_error)
-                valid_errors.append(svm_valid_error)
+                train_errors.append(rf_train_error)
+                valid_errors.append(rf_valid_error)
                 hyperparam_sets.append(hyperparam_set)
         else:
             print('invalid model type specified!')
