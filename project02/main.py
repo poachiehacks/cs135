@@ -189,6 +189,7 @@ def draw_plots(train_errors, valid_errors, hyperparams, filename='graph', folder
     np.set_printoptions(suppress=True, precision=4)     # controlling how np.floats get converted to strings
     for ii, (terror, verror, hp) in enumerate(zip(train_errors, valid_errors, hyperparams)):
         plt.scatter(ii, terror, marker='*', label=str(hp))
+    for ii, (terror, verror, hp) in enumerate(zip(train_errors, valid_errors, hyperparams)):
         plt.scatter(ii, verror, marker='*', label=str(hp))
     np.set_printoptions()   # reset to default 
 
