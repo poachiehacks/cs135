@@ -257,11 +257,12 @@ if __name__ == "__main__":
     # TODO: how to unpack hyperparameters into a function without overriding defaults of parameters i don't specify?
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
+    all_train_errors = {}
+    all_valid_errors = {}
+    all_hyperparam_sets = {}
+
     for model_type in models_to_run:
 
-        all_train_errors = {}
-        all_valid_errors = {}
-        all_hyperparam_sets = {}
         train_errors = []
         valid_errors = []
         hyperparam_sets = []
@@ -271,7 +272,11 @@ if __name__ == "__main__":
             # explore gamma, as it relates to the rbf kernel (low gamma = smoother decision boundary, high gamma = more complex decision boundary)
             # and explore C, as it relates to regularization (high C = low reg, low C = high reg)
             for C in svm_Cs:
+                hyperparam_set = (C)
                 svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
+                train_errors.append(svm_train_error)
+                valid_errors.append(svm_valid_error)
+                hyperparam_sets.append(hyperparam_set)
         elif model_type == 'mlp':
             ### Deep Neural Network
             mlp_train_errors = []
@@ -300,6 +305,16 @@ if __name__ == "__main__":
         else:
             print('invalid model type specified!')
 
+        draw_plots(train_errors, valid_errors, hyperparam_sets, filename=f'{model_type}_errors', folder=f'plots/{model_type}')
+        
         all_train_errors[model_type] = train_errors
         all_valid_errors[model_type] = valid_errors
         all_hyperparam_sets[model_type] = hyperparam_sets
+        
+        artifacts_folder = pathlib.Path(f'artifacts/{model_type}')
+        artifacts_path   = artifacts_folder / pathlib.Path('data.npz')
+        np.savez(artifacts_path, 
+                 all_train_errors=all_train_errors, 
+                 all_valid_errors=all_valid_errors,
+                 all_hyperparam_sets=all_hyperparam_sets
+        )
