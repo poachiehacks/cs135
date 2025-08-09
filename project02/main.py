@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import pathlib
+import matplotlib.pyplot as plt
 import string
 import re
 import unicodedata
@@ -10,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
 from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 
 def load_training_data():
@@ -117,7 +120,7 @@ def train_svm_model(X, y, C=1.0, degree=3):
     return svc
 
 
-def train_neural_network(X, y, hidden_layer_sizes):
+def train_neural_network(X, y, hidden_layer_sizes, alpha=0.0001):
     # we'll use MLPClassifier for a simple fully-connected feed forward network
     # default settings on the MLPClassifier look good, such as
     # - adam optimizer
@@ -127,17 +130,14 @@ def train_neural_network(X, y, hidden_layer_sizes):
     # might be worth testing out initial learning rate
     # might be worth testing out hidden layer sizes (both # layers and # neurons)
     # print(hidden_layer_sizes)
-    mlp = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes)
+    mlp = MLPClassifier(hidden_layer_sizes=hidden_layer_sizes, alpha=alpha)
     mlp.fit(X, y)
     return mlp
 
-
-def test_func(**parameters):
-    print(parameters)
-    test_func2(**parameters)
-
-def test_func2(x=None, y=None, z=None):
-    print(x, y, z)
+def train_random_forest(X, y):
+    clf = RandomForestClassifier()
+    clf.fit(X, y)
+    return clf
 
 
 def cross_validate(x_train, y_train, skf, train_model, **model_params):
@@ -167,18 +167,39 @@ def cross_validate(x_train, y_train, skf, train_model, **model_params):
         accuracy = model.score(fold_x_valid, fold_y_valid)
         valid_errors.append(1 - accuracy)
 
-    avg_train_error = train_errors
-    avg_valid_error = valid_errors
+    avg_train_error = np.mean(train_errors)
+    avg_valid_error = np.mean(valid_errors)
     print(f'avg training error:   {np.mean(train_errors)}')
     print(f'avg validation error: {np.mean(valid_errors)}')
 
     return avg_train_error, avg_valid_error
 
 
-if __name__ == "__main__":
-    # test_func(x=1, y=2, z='hello')
-    # exit()
+def draw_plots(train_errors, valid_errors, hyperparams, filename='graph', folder='.'):
+    folderpath = pathlib.Path(folder)
+    folderpath.mkdir(parents=True, exist_ok=True)
 
+    # for terror, verror, hp in zip(train_errors, valid_errors, hyperparams):
+    plt.figure()
+    plt.title('training/validation errors')
+    plt.plot(train_errors, label='training errors')
+    plt.plot(valid_errors, label='validation errors')
+
+    # mark individual datapoints with hyperparameter set on legend
+    np.set_printoptions(suppress=True, precision=4)     # controlling how np.floats get converted to strings
+    for ii, (terror, verror, hp) in enumerate(zip(train_errors, valid_errors, hyperparams)):
+        plt.scatter(ii, terror, marker='*', label=str(hp))
+        plt.scatter(ii, verror, marker='*', label=str(hp))
+    np.set_printoptions()   # reset to default 
+
+    plt.legend()
+    imagepath = folderpath / f'{filename}.png'
+    plt.savefig(imagepath)
+    plt.close('all')
+
+
+if __name__ == "__main__":
+    
     x_train_df, y_train_df = load_training_data()
 
     # it's simplest to preprocess data before doing split into folds
@@ -200,15 +221,42 @@ if __name__ == "__main__":
     #     svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
 
     ### Deep Neural Network
+    # # consider exploring regularization
     # mlp_num_hlayers = [10, 30, 50, 70, 90]
     # mlp_hlayer_neurons = [1100, 1300, 1500, 1700, 1900]
-    mlp_num_hlayers = [5, 7, 9]
-    mlp_hlayer_neurons = [50, 70, 90]
-    for num_hlayers in mlp_num_hlayers:
-        for num_neurons in mlp_hlayer_neurons:
-            hidden_layer_sizes = np.full((num_hlayers, ), num_neurons)
-            print(num_hlayers, num_neurons)
-            mlp_train_error, mlp_valid_error = cross_validate(
-                    x_train, y_train, skf, train_neural_network, hidden_layer_sizes=hidden_layer_sizes
-            )
+    # mlp_num_hlayers = [2, 3, 4]
+    # mlp_hlayer_neurons = [50, 70, 90]
+    mlp_num_hlayers = [20]
+    mlp_hlayer_neurons = [100]
+    alphas = np.logspace(-4, -1, 5)
+    hls_list = [
+        [100, 100, 100],]
+    #     [1500, 900, 300],
+    #     [1500, 900, 100, 100, 100]
+    # ]
 
+    mlp_train_errors = []
+    mlp_valid_errors = []
+    mlp_hyperparams = []
+    # for num_hlayers in mlp_num_hlayers:
+    #     for num_neurons in mlp_hlayer_neurons:
+    #         for alpha in alphas:
+    #             hidden_layer_sizes = np.full((num_hlayers, ), num_neurons)
+                
+    #             hyperparams = (num_hlayers, num_neurons, alpha)
+    for hidden_layer_sizes in hls_list:
+        for alpha in alphas:
+            hyperparams = (hidden_layer_sizes, alpha)
+            
+            mlp_train_error, mlp_valid_error = cross_validate(
+                    x_train, y_train, skf, train_neural_network, 
+                    hidden_layer_sizes=hidden_layer_sizes, alpha=alpha
+            )
+            mlp_train_errors.append(mlp_train_error)
+            mlp_valid_errors.append(mlp_valid_error)
+            mlp_hyperparams.append(hyperparams)
+
+    draw_plots(mlp_train_errors, mlp_valid_errors, mlp_hyperparams, filename='mlp_errors', folder='plots/mlp')
+
+    # ### Random Forests
+    # rf_train_error, rf_valid_error = cross_validate(x_train, y_train, skf, train_random_forest)
