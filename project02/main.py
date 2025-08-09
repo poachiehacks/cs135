@@ -241,18 +241,20 @@ if __name__ == "__main__":
 
     # SVM
     # svm_Cs = np.logspace(-1, 1, 5)      # regularization, bigger value is lower reg
-    svm_Cs = 1      # regularization, bigger value is lower reg
-    svm_gammas = np.logspace(-3, -1, 5)
+    svm_Cs = [1]      # regularization, bigger value is lower reg
+    svm_gammas = np.logspace(-1, 1, 5)
 
     # MLP
-    alphas = np.logspace(-2, 1, 5)     # regularization, bigger value is higher reg
+    # alphas = np.logspace(-2, 1, 5)     # regularization, bigger value is higher reg
+    alphas = [10]     # regularization, bigger value is higher reg
     hls_list = [                         # hidden layer sizes
         [500, 500, 500, 500, 500]
     ]
 
     # RF
     min_samples_leaf = [1, 2, 3, 4, 5]
-    ccp_alphas = np.linspace(0, 0.01, 5)# regularization, bigger value is higher reg
+    # ccp_alphas = np.linspace(0, 0.01, 5)  # regularization, bigger value is higher reg
+    ccp_alphas = [0]                          # regularization, bigger value is higher reg
 
     #################################
 
