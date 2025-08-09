@@ -324,6 +324,7 @@ if __name__ == "__main__":
         
         artifacts_folder = pathlib.Path(f'artifacts/{model_type}')
         artifacts_path   = artifacts_folder / pathlib.Path('data.npz')
+        artifacts_folder.mkdir(parents=True, exist_ok=True)
         np.savez(artifacts_path, 
                  all_train_errors=all_train_errors, 
                  all_valid_errors=all_valid_errors,
