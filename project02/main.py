@@ -231,10 +231,10 @@ if __name__ == "__main__":
     mlp_hlayer_neurons = [100]
     alphas = np.logspace(-4, -1, 5)
     hls_list = [
-        [100, 100, 100],]
+        # [100, 100, 100],]
     #     [1500, 900, 300],
-    #     [1500, 900, 100, 100, 100]
-    # ]
+        [1500, 900, 100, 100, 100]
+    ]
 
     mlp_train_errors = []
     mlp_valid_errors = []
