@@ -126,9 +126,9 @@ def keep_words_with_certain_count(word_counts, min_count, max_count):
     return pruned_word_counts
 
 
-def train_svm_model(X, y, C=1.0, degree=3):
+def train_svm_model(X, y, C=1.0, gamma='scale'):
     # print(C, degree)
-    svc = SVC(C=C, degree=degree)   # default values
+    svc = SVC(C=C, gamma=gamma)   # default values
     svc.fit(X, y)
     return svc
 
@@ -240,17 +240,19 @@ if __name__ == "__main__":
 
 
     # SVM
-    svm_Cs = np.logspace(-1, 1, 5)      # regularization, bigger value is lower reg
-
+    # svm_Cs = np.logspace(-1, 1, 5)      # regularization, bigger value is lower reg
+    svm_Cs = 1      # regularization, bigger value is lower reg
+    svm_gammas = np.logspace(-3, -1, 5)
 
     # MLP
-    alphas = np.logspace(-4, -1, 3)     # regularization, bigger value is higher reg
+    alphas = np.logspace(-2, 1, 5)     # regularization, bigger value is higher reg
     hls_list = [                         # hidden layer sizes
-        [100, 100, 100]
+        [500, 500, 500, 500, 500]
     ]
 
     # RF
-    ccp_alphas = np.linspace(0, 0.05, 5)# regularization, bigger value is higher reg
+    min_samples_leaf = [1, 2, 3, 4, 5]
+    ccp_alphas = np.linspace(0, 0.01, 5)# regularization, bigger value is higher reg
 
     #################################
 
@@ -264,15 +266,14 @@ if __name__ == "__main__":
     #
     # i also wonder if it's important to keep rare words instead of throwing them out
     # what's the histogram of word frequencies like?
-    x_train = create_features(x_train_processed, min_word_count, max_word_count)
+    # x_train = create_features(x_train_processed, min_word_count, max_word_count)
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
-
-    x_train2 = create_features2(x_train_processed, min_word_count, max_word_count)
+    x_train = create_features2(x_train_processed, min_word_count, max_word_count)
     # print(type(x_train))
     # print(x_train.shape)
     # print(type(x_train2))
     # print(x_train2.shape)
-    x_train = x_train2
+    # x_train = x_train2
 
     
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
@@ -292,13 +293,14 @@ if __name__ == "__main__":
             # explore gamma, as it relates to the rbf kernel (low gamma = smoother decision boundary, high gamma = more complex decision boundary)
             # and explore C, as it relates to regularization (high C = low reg, low C = high reg)
             for C in svm_Cs:
-                hyperparam_set = (C)
-                svm_train_error, svm_valid_error = cross_validate(
-                        x_train, y_train, skf, model_type, train_svm_model, C=C
-                )
-                train_errors.append(svm_train_error)
-                valid_errors.append(svm_valid_error)
-                hyperparam_sets.append(hyperparam_set)
+                for gamma in svm_gammas:
+                    hyperparam_set = (C, gamma)
+                    svm_train_error, svm_valid_error = cross_validate(
+                            x_train, y_train, skf, model_type, train_svm_model, C=C, gamma=gamma
+                    )
+                    train_errors.append(svm_train_error)
+                    valid_errors.append(svm_valid_error)
+                    hyperparam_sets.append(hyperparam_set)
         elif model_type == 'mlp':
             ### Deep Neural Network
             # mlp_train_errors = []
@@ -324,13 +326,14 @@ if __name__ == "__main__":
         elif model_type == 'rf':
             ### Random Forests
             for ccp in ccp_alphas:
-                hyperparam_set = (ccp, )
-                rf_train_error, rf_valid_error = cross_validate(
-                        x_train, y_train, skf, model_type, train_random_forest, ccp_alpha=ccp
-                )
-                train_errors.append(rf_train_error)
-                valid_errors.append(rf_valid_error)
-                hyperparam_sets.append(hyperparam_set)
+                for min_samples in min_samples_leaf:
+                    hyperparam_set = (ccp, )
+                    rf_train_error, rf_valid_error = cross_validate(
+                            x_train, y_train, skf, model_type, train_random_forest, ccp_alpha=ccp, min_samples_leaf=min_samples
+                    )
+                    train_errors.append(rf_train_error)
+                    valid_errors.append(rf_valid_error)
+                    hyperparam_sets.append(hyperparam_set)
         else:
             print('invalid model type specified!')
 
