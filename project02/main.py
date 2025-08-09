@@ -147,8 +147,8 @@ def train_neural_network(X, y, hidden_layer_sizes, alpha=0.0001):
     mlp.fit(X, y)
     return mlp
 
-def train_random_forest(X, y):
-    clf = RandomForestClassifier()
+def train_random_forest(X, y, ccp_alpha=0.0):
+    clf = RandomForestClassifier(ccp_alpha=ccp_alpha)
     clf.fit(X, y)
     return clf
 
