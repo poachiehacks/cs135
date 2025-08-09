@@ -193,6 +193,8 @@ if __name__ == "__main__":
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
     # ### SVM
+    # # explore gamma, as it relates to the rbf kernel (low gamma = smoother decision boundary, high gamma = more complex decision boundary)
+    # # and explore C, as it relates to regularization (high C = low reg, low C = high reg)
     # svm_Cs = np.logspace(-1, 1, 5)    
     # for C in svm_Cs:
     #     svm_train_error, svm_valid_error = cross_validate(x_train, y_train, skf, train_svm_model, C=C)
@@ -201,7 +203,7 @@ if __name__ == "__main__":
     # mlp_num_hlayers = [10, 30, 50, 70, 90]
     # mlp_hlayer_neurons = [1100, 1300, 1500, 1700, 1900]
     mlp_num_hlayers = [5, 7, 9]
-    mlp_hlayer_neurons = [100, 200, 300]
+    mlp_hlayer_neurons = [50, 70, 90]
     for num_hlayers in mlp_num_hlayers:
         for num_neurons in mlp_hlayer_neurons:
             hidden_layer_sizes = np.full((num_hlayers, ), num_neurons)
