@@ -25,6 +25,11 @@ def load_training_data():
 
     return x_train_df, y_train_df
 
+def load_test_data():
+    
+    x_test_df = pd.read_csv('data/data_reviews/x_test.csv')
+    return x_test_df
+
 
 def preprocess(x_df):
     
@@ -54,7 +59,7 @@ def preprocess(x_df):
     
     return x_new_df 
 
-def create_features2(x_df, min_count, max_count):
+def create_features2(x_df):
     """
         Uses sklearn textual data feature extraction tools to get features
     """
@@ -62,7 +67,7 @@ def create_features2(x_df, min_count, max_count):
     feature_matrix = vectorizer.fit_transform(x_df['text'])
     print(vectorizer.get_feature_names_out())
     print(len(vectorizer.get_feature_names_out()))
-    return feature_matrix
+    return feature_matrix, vectorizer
 
 
 def create_features(x_df, min_count, max_count):
@@ -128,7 +133,7 @@ def keep_words_with_certain_count(word_counts, min_count, max_count):
 
 def train_svm_model(X, y, C=1.0, gamma='scale'):
     # print(C, degree)
-    svc = SVC(C=C, gamma=gamma)   # default values
+    svc = SVC(C=C, gamma=gamma, probability=True)   # default values
     svc.fit(X, y)
     return svc
 
@@ -214,6 +219,58 @@ def draw_plots(train_errors, valid_errors, hyperparams, filename='graph', folder
     plt.close('all')
 
 
+def test_best_model(X, y, vectorizer):
+
+    all_models = ["svm", "mlp", "rf"]
+    artifact_path = pathlib.Path('artifacts/rf/data.npz')
+    data = np.load(artifact_path, allow_pickle=True)
+
+    all_train_errors = data['all_train_errors'].item()
+    all_valid_errors = data['all_valid_errors'].item()
+    all_hyperparam_sets = data['all_hyperparam_sets'].item()
+
+    best_valid_errors = []
+    for model in all_models:
+        # print(all_valid_errors[model])
+        best_valid_errors.append(np.min(all_valid_errors[model]))
+    # print(best_valid_errors)
+    # print(np.argmin(best_valid_errors))
+    
+    if np.argmin(best_valid_errors) == 0:
+        best_model_type = 'svm'
+    elif np.argmin(best_valid_errors) == 1:
+        best_model_type = 'mlp'
+    elif np.argmin(best_valid_errors) == 2:
+        best_model_type = 'rf'
+
+    best_hp_set_idx = np.argmin(all_valid_errors[best_model_type])
+    # print(best_hp_set_idx)
+    best_hp_set = all_hyperparam_sets[best_model_type][best_hp_set_idx]
+    # print(best_model_type)
+    # print(best_hp_set)
+
+    if best_model_type == 'svm':
+        C, gamma = best_hp_set
+        clf = train_svm_model(X, y, C=C, gamma=gamma)
+    elif best_model_type == 'mlp':
+        hidden_layer_sizes, alpha = best_hp_set
+        clf = train_neural_network(X, y, hidden_layer_sizes=hidden_layer_sizes, alpha=alpha)
+    elif best_model_type == 'rf':
+        ccp_alpha, min_samples_leaf = best_hp_set
+        clf = train_random_forest(X, y, ccp_alpha=ccp_alpha, min_samples_leaf=min_samples_leaf)
+    
+
+
+    x_test_df = load_test_data()
+    x_test_processed = preprocess(x_test_df)
+    x_test = vectorizer.transform(x_test_processed['text'])
+    proba = clf.predict_proba(x_test)
+        
+    np.savetxt('pred_proba.txt', proba)
+
+
+
+
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Choose an ML model.")
@@ -224,6 +281,12 @@ if __name__ == "__main__":
         choices=["svm", "mlp", "rf", "all"],
         default="all", 
         help="The ML model to use: svm, mlp, rf, or all three"
+    )
+    # Optional flag (no value, just a switch)
+    parser.add_argument(
+        "--test-best",          # name of the flag
+        action="store_true",  # True if present, False if missing
+        help="Tests the best model"
     )
     args = parser.parse_args()
 
@@ -270,8 +333,16 @@ if __name__ == "__main__":
     # what's the histogram of word frequencies like?
     # x_train = create_features(x_train_processed, min_word_count, max_word_count)
     y_train = y_train_df['is_positive_sentiment'].to_numpy()
-    x_train = create_features2(x_train_processed, min_word_count, max_word_count)
+    x_train, vectorizer = create_features2(x_train_processed)
     
+    if args.test_best:
+        print('hello moto')
+
+        test_best_model(x_train, y_train, vectorizer)
+
+        exit()
+
+
     
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=420)
     
