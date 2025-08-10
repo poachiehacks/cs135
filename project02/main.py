@@ -383,9 +383,6 @@ if __name__ == "__main__":
                             x_train, y_train, skf, model_type, train_neural_network, 
                             hidden_layer_sizes=hidden_layer_sizes, alpha=alpha
                     )
-                    # mlp_train_errors.append(mlp_train_error)
-                    # mlp_valid_errors.append(mlp_valid_error)
-                    # mlp_hyperparam_sets.append(hyperparam_set)
                     train_errors.append(mlp_train_error)
                     valid_errors.append(mlp_valid_error)
                     hyperparam_sets.append(hyperparam_set)
@@ -411,11 +408,13 @@ if __name__ == "__main__":
         all_valid_errors[model_type] = valid_errors
         all_hyperparam_sets[model_type] = hyperparam_sets
         
-        artifacts_folder = pathlib.Path(f'artifacts/{model_type}')
-        artifacts_path   = artifacts_folder / pathlib.Path('data.npz')
-        artifacts_folder.mkdir(parents=True, exist_ok=True)
-        np.savez(artifacts_path, 
-                 all_train_errors=all_train_errors, 
-                 all_valid_errors=all_valid_errors,
-                 all_hyperparam_sets=all_hyperparam_sets
-        )
+    artifacts_folder = pathlib.Path(f'artifacts/')
+    artifacts_path   = artifacts_folder / pathlib.Path('data.npz')
+    artifacts_folder.mkdir(parents=True, exist_ok=True)
+    np.savez(artifacts_path, 
+                all_train_errors=all_train_errors, 
+                all_valid_errors=all_valid_errors,
+                all_hyperparam_sets=all_hyperparam_sets
+    )
+
+    # choose best model and run test data on it
