@@ -222,7 +222,7 @@ def draw_plots(train_errors, valid_errors, hyperparams, filename='graph', folder
 def test_best_model(X, y, vectorizer):
 
     all_models = ["svm", "mlp", "rf"]
-    artifact_path = pathlib.Path('artifacts/rf/data.npz')
+    artifact_path = pathlib.Path('artifacts/data.npz')
     data = np.load(artifact_path, allow_pickle=True)
 
     all_train_errors = data['all_train_errors'].item()
